@@ -1,0 +1,22 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Review {
+  id             String   @id @default(uuid())
+  googleReviewId String   @unique
+  authorName     String
+  avatarUrl      String?
+  rating         Int
+  comment        String
+  replyText      String?
+  status         String   @default("UNANSWERED") // "UNANSWERED", "GENERATED", "ANSWERED"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
