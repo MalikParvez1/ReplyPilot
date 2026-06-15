@@ -1,11 +1,46 @@
 // prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
+}
+
+// --- CLERK USER MODELL ---
+model User {
+  id            String    @id // Hier speichern wir die Clerk User ID
+  email         String    @unique
+  name          String?
+  
+  // ROLLEN-SYSTEM
+  role          String    @default("USER") 
+  
+  // Verknüpfung zum SaaS Mandanten
+  businessId    String?
+  business      Business? @relation(fields: [businessId], references: [id])
+}
+
+// --- SAAS BUSINESS LOGIK (Bleibt unverändert) ---
+model Business {
+  id            String      @id @default(cuid())
+  name          String
+  googlePlaceId String?     
+  users         User[]
+  reviews       Review[]
+  settings      AISettings?
+  createdAt     DateTime    @default(now())
+}
+
+model AISettings {
+  id                  String   @id @default(cuid())
+  tone                String   @default("friendly")
+  length              String   @default("medium")
+  includeBusinessName Boolean  @default(true)
+  customContext       String?
+  
+  businessId          String   @unique
+  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 model Review {
@@ -16,7 +51,11 @@ model Review {
   rating         Int
   comment        String
   replyText      String?
-  status         String   @default("UNANSWERED") // "UNANSWERED", "GENERATED", "ANSWERED"
+  status         String   @default("UNANSWERED")
+  
+  businessId     String   
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

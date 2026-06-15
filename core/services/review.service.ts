@@ -1,3 +1,4 @@
+// src/core/services/review.service.ts
 import { IReviewRepository } from '../interfaces/review.interface';
 import { IAIService, AISettings } from '../interfaces/ai.interface';
 
@@ -7,8 +8,10 @@ export class ReviewService {
     private aiService: IAIService
   ) {}
 
-  async getPendingReviews() {
-    return this.reviewRepo.findUnanswered();
+  // HIER FEHLTE DER PARAMETER! 
+  async getPendingReviews(businessId: string) {
+    // Wir reichen die ID an das Repository weiter
+    return this.reviewRepo.findUnanswered(businessId);
   }
 
   async generateAiReply(reviewId: string, settings: AISettings) {
@@ -17,15 +20,11 @@ export class ReviewService {
 
     const aiReply = await this.aiService.generateResponse(review.comment, review.rating, settings);
     
-    // Status updaten, dass ein Entwurf existiert
     return this.reviewRepo.updateStatus(reviewId, 'GENERATED', aiReply);
   }
 
   async publishReply(reviewId: string, finalReplyText: string) {
-    // 1. Hier würde der API-Aufruf an das Google Business Profile erfolgen:
-    // await googleBusinessApi.postReply(reviewId, finalReplyText);
-    
-    // 2. Datenbank-Status auf beantwortet setzen
+    // (Später: API Aufruf an Google)
     return this.reviewRepo.updateStatus(reviewId, 'ANSWERED', finalReplyText);
   }
 }
