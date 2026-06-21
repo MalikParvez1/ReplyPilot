@@ -38,6 +38,8 @@ model AISettings {
   length              String   @default("medium")
   includeBusinessName Boolean  @default(true)
   customContext       String?
+  language            String   @default("de")
+  standardReplyText   String?
   
   businessId          String   @unique
   business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

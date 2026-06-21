@@ -15,6 +15,8 @@ export function useReviews() {
     },
   });
 
+  const reviews: Review[] = reviewsQuery.data ?? [];
+
   // 2. KI Antwort generieren
   const generateMutation = useMutation({
     mutationFn: async ({ reviewId, settings }: { reviewId: string; settings: AISettings }) => {
@@ -63,7 +65,7 @@ export function useReviews() {
   });
 
   return {
-    reviews: reviewsQuery.data || [],
+    reviews,
     isLoading: reviewsQuery.isLoading,
     generateReply: generateMutation.mutate,
     isGenerating: generateMutation.isPending,

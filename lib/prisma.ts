@@ -1,6 +1,6 @@
 // src/lib/prisma.ts
-import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaClient } from '@prisma/client';
 
 // 1. In Prisma 7 nimmt der Adapter einfach nur die URL an.
 // Er kümmert sich im Hintergrund selbst um better-sqlite3!
