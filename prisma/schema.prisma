@@ -33,16 +33,14 @@ model Business {
 }
 
 model AISettings {
-  id                  String   @id @default(cuid())
-  tone                String   @default("friendly")
-  length              String   @default("medium")
-  includeBusinessName Boolean  @default(true)
-  customContext       String?
-  language            String   @default("de")
-  standardReplyText   String?
-  
-  businessId          String   @unique
-  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  businessName      String?  // Name des Ladens
+  businessType      String?  // z.B. Restaurant, Arzt, Kino
+  toneOfVoice       String   @default("PROFESSIONAL") // CASUAL, PROFESSIONAL, FRIENDLY
+  additionalContext String?  // z.B. "Erwähne immer unsere Webseite www..."
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Review {

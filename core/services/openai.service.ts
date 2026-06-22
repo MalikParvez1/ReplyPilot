@@ -1,109 +1,52 @@
-import { IAIService, AISettings } from '../interfaces/ai.interface';
+import { OpenAI } from 'openai';
 
-export class OpenAIService implements IAIService {
-  private apiKey: string;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-  constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || '';
-  }
-
-  async generateResponse(reviewText: string, starRating: number, settings: AISettings): Promise<string> {
-    if (!this.apiKey) throw new Error('OpenAI API Key missing');
-
-    const prompt = this.buildPrompt(reviewText, starRating, settings, 'single');
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      })
-    });
-
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
-  }
-
-  async generateMultipleResponses(reviewText: string, starRating: number, authorName: string, settings: AISettings): Promise<string[]> {
-    if (!this.apiKey) throw new Error('OpenAI API Key missing');
-
+export class OpenAIService {
+  async generateReviewReplies(
+    reviewText: string, 
+    rating: number, 
+    settings: { businessName?: string | null; businessType?: string | null; toneOfVoice: string; additionalContext?: string | null }
+  ) {
     const prompt = `
-      Du bist ein professioneller KI-Assistent für ein lokales Unternehmen. 
-      Der Kunde "${authorName}" hat folgende Google-Rezension hinterlassen:
+      Du bist ein erfahrener KI-Assistent für das Online-Reputationsmanagement.
+      Generiere genau 3 unterschiedliche, hochqualitative Antwortvorschläge für die folgende Google-Rezension.
       
-      Rezension: "${reviewText}"
-      Sternebewertung: ${starRating}/5
+      Unternehmenskontext:
+      - Name: ${settings.businessName || "Unser Unternehmen"}
+      - Branche/Typ: ${settings.businessType || "Lokales Geschäft"}
+      - Gewünschte Tonalität: ${settings.toneOfVoice} (Passe Wortwahl und Ansprache wie 'Du' oder 'Sie' streng hieran an!)
+      - Wichtige Zusatzinfos: ${settings.additionalContext || "Keine"}
       
-      Richtlinien für die Antworten:
-      - Tonalität: ${settings.tone}
-      - Länge: ${settings.length}
-      - Firmenname einbeziehen: ${settings.includeBusinessName ? 'Ja' : 'Nein'}
-      - Sprache: ${settings.language || 'Deutsch'}
-      - Zusätzlicher Kontext zum Unternehmen: ${settings.customContext || 'Keiner'}
-      ${settings.standardReplyText ? `- Bitte integriere diese Standard-Information: ${settings.standardReplyText}` : ''}
+      Rezension:
+      - Sterne: ${rating} von 5 Sternen
+      - Text: "${reviewText}"
       
-      Generiere 3 unterschiedliche, hochwertige Antwortvorschläge. Jeder Vorschlag sollte eine andere Herangehensweise haben:
-      1. Ein Vorschlag sollte sehr empathisch und persönlich sein
-      2. Ein Vorschlag sollte professionell und lösungsorientiert sein
-      3. Ein Vorschlag sollte warm und einladend sein
+      Richtlinien für die 3 Optionen:
+      - Option 1 (Direkt & Lösungsorientiert): Kurz, präzise, bedankt sich direkt oder bietet bei Kritik sofort Support.
+      - Option 2 (Herzlich & Emotional): Sehr freundlich, hebt die Freude über den Besuch hervor oder drückt tiefes Bedauern aus.
+      - Option 3 (Kreativ & Individuell): Greift ein spezifisches Detail aus der Rezension auf (falls vorhanden), wirkt extrem menschlich.
       
-      Antworte im folgenden JSON-Format (nur JSON, keine zusätzlichen Erklärungen):
+      Wichtig bei schlechten Bewertungen (1-3 Sterne): Niemals defensiv oder beleidigt reagieren! Immer professionell entschuldigen und eine Deeskalation (z.B. E-Mail-Kontakt) anbieten.
+      
+      Gib das Ergebnis AUSSCHLIESSLICH als valides JSON-Objekt in folgendem Format zurück:
       {
-        "suggestions": [
-          "Vorschlag 1",
-          "Vorschlag 2",
-          "Vorschlag 3"
-        ]
+        "suggestions": ["Antwortmöglichkeit 1", "Antwortmöglichkeit 2", "Antwortmöglichkeit 3"]
       }
     `;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.8,
-      })
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // Kostengünstig, schnell und perfekt für Text-Strukturierung
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
     });
 
-    const data = await response.json();
-    const content = data.choices[0].message.content.trim();
-    
-    try {
-      const parsed = JSON.parse(content);
-      return parsed.suggestions || [];
-    } catch {
-      // Fallback bei JSON-Parse-Fehler
-      return [content, content, content];
-    }
-  }
+    const content = response.choices[0].message.content;
+    if (!content) throw new Error("Keine Antwort von OpenAI generiert.");
 
-  private buildPrompt(reviewText: string, starRating: number, settings: AISettings, mode: 'single' | 'multiple'): string {
-    return `
-      Du bist ein professioneller KI-Assistent für ein lokales Unternehmen. 
-      Schreibe eine Antwort auf folgende Google-Rezension.
-      
-      Rezension: "${reviewText}"
-      Sternebewertung: ${starRating}/5
-      
-      Richtlinien für die Antwort:
-      - Tonalität: ${settings.tone}
-      - Länge: ${settings.length}
-      - Firmenname einbeziehen: ${settings.includeBusinessName ? 'Ja' : 'Nein'}
-      - Sprache: ${settings.language || 'Deutsch'}
-      - Zusätzlicher Kontext zum Unternehmen: ${settings.customContext || 'Keiner'}
-      ${settings.standardReplyText ? `- Bitte integriere diese Standard-Information: ${settings.standardReplyText}` : ''}
-      
-      Antworte nur mit dem fertigen Antworttext, ohne Formatierungen oder Einleitungen wie "Hier ist deine Antwort:".
-    `;
+    // Gibt ein Objekt mit { suggestions: [string, string, string] } zurück
+    return JSON.parse(content) as { suggestions: string[] };
   }
 }

@@ -1,135 +1,103 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Review } from '@/core/interfaces/review.interface';
-import { AISettings } from '@/core/interfaces/ai.interface';
-import { AnswerSelector } from './AnswerSelector';
+import { useState } from "react";
+import { AnswerSelector } from "./AnswerSelector";
+import { Button } from "@/components/ui/button";
 
 interface ReviewCardProps {
-  review: Review;
-  currentSettings: AISettings;
-  onGenerate: (reviewId: string, settings: AISettings) => void;
-  onPublish: (reviewId: string, replyText: string) => void;
-  isGenerating: boolean;
+  review: {
+    id: string;
+    reviewText: string;
+    rating: number;
+    reviewerName: string;
+    replyText?: string | null;
+  };
 }
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({
-  review,
-  currentSettings,
-  onGenerate,
-  onPublish,
-  isGenerating,
-}) => {
-  const [editableReply, setEditableReply] = useState(review.replyText || '');
-  const [showAnswerSelector, setShowAnswerSelector] = useState(false);
+export function ReviewCard({ review }: ReviewCardProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [currentReply, setCurrentReply] = useState<string | null>(review.replyText || null);
 
-  useEffect(() => {
-    if (review.replyText) {
-      setEditableReply(review.replyText);
-    }
-  }, [review.replyText]);
-
-  const handleGenerateSuggestions = async () => {
-    setLoadingSuggestions(true);
+  const handleGenerate = async () => {
+    setIsLoading(true);
     try {
-      const res = await fetch('/api/reviews/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewId: review.id }),
+      const res = await fetch("/api/reviews/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewText: review.reviewText, rating: review.rating }),
       });
       const data = await res.json();
       setSuggestions(data.suggestions || []);
-      setShowAnswerSelector(true);
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
+    } catch (err) {
+      console.error(err);
     } finally {
-      setLoadingSuggestions(false);
+      setIsLoading(false);
     }
   };
 
-  const handlePublishFromSelector = (text: string) => {
-    setEditableReply(text);
-    onPublish(review.id, text);
-    setShowAnswerSelector(false);
+  const handlePublish = async (finalAnswer: string) => {
+    setIsPublishing(true);
+    try {
+      const res = await fetch("/api/reviews/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId: review.id, replyText: finalAnswer }),
+      });
+      if (res.ok) {
+        setCurrentReply(finalAnswer);
+        setSuggestions([]); // Vorschläge nach Erfolg leeren
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
-    <>
-      <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm space-y-4">
-        {/* Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h4 className="font-semibold text-gray-900">{review.authorName}</h4>
-            <div className="flex items-center text-amber-500 gap-0.5 mt-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i}>{i < review.rating ? '★' : '☆'}</span>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Status: <span className="font-medium">{review.status.replace('UNANSWERED', 'Unbeantwortet')}</span>
-            </p>
+    <div className="p-5 border rounded-xl shadow-sm bg-white dark:bg-slate-900 space-y-4">
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="font-semibold text-sm text-slate-800 dark:text-white">{review.reviewerName}</h3>
+          <div className="text-amber-400 text-xs mt-0.5">
+            {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
           </div>
-          <span className="text-xs text-gray-400">
-            {new Date(review.createdAt).toLocaleDateString('de-DE')}
-          </span>
         </div>
-
-        {/* Rezensionstext */}
-        <p className="text-gray-700 text-sm italic">"{review.comment}"</p>
-
-        {/* Editor & Actions */}
-        <div className="pt-2 border-t border-gray-100 space-y-3">
-          {review.status === 'UNANSWERED' ? (
-            <button
-              onClick={handleGenerateSuggestions}
-              disabled={loadingSuggestions}
-              className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
-            >
-              {loadingSuggestions ? 'Generiere 3 Vorschläge...' : '✨ 3 KI-Vorschläge generieren'}
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                KI-Antwortentwurf (bearbeitbar)
-              </label>
-              <textarea
-                value={editableReply}
-                onChange={(e) => setEditableReply(e.target.value)}
-                rows={4}
-                className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onPublish(review.id, editableReply)}
-                  className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
-                >
-                  ✓ Auf Google veröffentlichen
-                </button>
-                <button
-                  onClick={handleGenerateSuggestions}
-                  disabled={loadingSuggestions}
-                  className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition disabled:opacity-50"
-                >
-                  Neu generieren
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+          currentReply ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+        }`}>
+          {currentReply ? "Beantwortet" : "Unbeantwortet"}
+        </span>
       </div>
+      
+      <p className="text-slate-600 dark:text-slate-300 text-sm italic">
+        &quot;{review.reviewText}&quot;
+      </p>
 
-      {/* Answer Selector Modal */}
-      {showAnswerSelector && (
-        <AnswerSelector
-          review={review}
-          suggestions={suggestions}
-          onPublish={handlePublishFromSelector}
-          isLoading={isGenerating}
-          onClose={() => setShowAnswerSelector(false)}
-        />
+      {currentReply ? (
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-dashed text-xs">
+          <span className="font-bold text-slate-400 block mb-1">Deine veröffentlichte Antwort:</span>
+          <p className="text-slate-600 dark:text-slate-400">{currentReply}</p>
+        </div>
+      ) : (
+        <>
+          {suggestions.length === 0 && (
+            <Button onClick={handleGenerate} disabled={isLoading} size="sm" className="w-full sm:w-auto">
+              {isLoading ? "Generiere 3 Optionen..." : "KI-Optionen erstellen"}
+            </Button>
+          )}
+
+          {suggestions.length > 0 && (
+            <AnswerSelector
+              suggestions={suggestions}
+              onPublish={handlePublish}
+              isPublishing={isPublishing}
+            />
+          )}
+        </>
       )}
-    </>
+    </div>
   );
-};
+}
