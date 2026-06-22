@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, MessageSquare, Mic, Tag, ChevronDown, Send } from "lucide-react";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 export function Navbar() {
   const pathname = usePathname();
+  // Clerk Hook, um die Daten des aktuell angemeldeten Nutzers zu holen
+  const { user, isLoaded } = useUser();
 
   const navItems = [
     { name: "Cockpit", href: "/dashboard", icon: LayoutDashboard },
@@ -15,12 +18,10 @@ export function Navbar() {
   ];
 
   return (
-    // Feste Höhe (h-16), fixiert am oberen Bildschirmrand
     <header className="w-full bg-[#111827] text-slate-300 h-16 fixed top-0 left-0 z-50 flex items-center justify-between px-6 shadow-md">
       
       {/* Linke Seite: Logo & Navigation */}
       <div className="flex items-center space-x-10">
-        {/* Logo */}
         <div className="flex items-center space-x-2 text-white">
           <div className="bg-[#FF5A36] p-1.5 rounded-full">
             <Send className="w-4 h-4 text-white -ml-0.5 mt-0.5 transform -rotate-45" />
@@ -28,7 +29,6 @@ export function Navbar() {
           <span className="text-xl font-bold tracking-tight">ReplyPilot</span>
         </div>
 
-        {/* Navigation */}
         <nav className="hidden md:flex space-x-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -60,7 +60,6 @@ export function Navbar() {
       {/* Rechte Seite: Standort & User Profil */}
       <div className="flex items-center space-x-6">
         
-        {/* Standort */}
         <div className="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors">
           <div className="text-right hidden sm:block">
             <h3 className="text-white font-medium text-sm leading-tight">Trattoria Bella</h3>
@@ -69,13 +68,16 @@ export function Navbar() {
           <ChevronDown className="w-4 h-4 text-slate-400" />
         </div>
 
-        {/* Profil */}
-        <div className="flex items-center space-x-3 border-l border-slate-700 pl-6 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-[#FF5A36] flex items-center justify-center text-white font-bold text-xs">
-            J
-          </div>
+        {/* Clerk Profilbereich */}
+        <div className="flex items-center space-x-3 border-l border-slate-700 pl-6">
+          {/* Zeigt das Profilbild des Nutzers und öffnet das Menü bei Klick */}
+          <UserButton />
+          
           <div className="hidden sm:block text-left">
-            <p className="text-sm font-medium text-white leading-tight">Jan Fischer</p>
+            <p className="text-sm font-medium text-white leading-tight">
+              {/* Zeigt den Vornamen an, wenn geladen, ansonsten Fallback */}
+              {isLoaded && user ? user.firstName || "Nutzer" : "..."}
+            </p>
           </div>
         </div>
 

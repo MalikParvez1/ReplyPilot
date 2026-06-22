@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Send, Star, Zap, MessageSquare, ArrowRight, ShieldCheck } from "lucide-react";
+// Importiere unsere neue Client Component
+import { HeaderAuth } from "@/components/HeaderAuth";
 
+// Kein 'async' mehr nötig!
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-sans selection:bg-[#FF5A36] selection:text-white">
@@ -13,13 +16,10 @@ export default function LandingPage() {
           </div>
           <span className="text-2xl font-bold tracking-tight">ReplyPilot</span>
         </div>
-        <nav className="flex items-center space-x-6">
-          <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-            Login
-          </Link>
-          <Link href="/dashboard" className="px-5 py-2.5 bg-[#111827] text-white text-sm font-semibold rounded-full hover:bg-slate-800 transition-all">
-            Zum Dashboard
-          </Link>
+        
+        <nav className="flex items-center space-x-4 md:space-x-6">
+          {/* Hier rendert jetzt unsere saubere Client-Logik */}
+          <HeaderAuth />
         </nav>
       </header>
 
@@ -46,7 +46,7 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link href="#features" className="px-8 py-4 bg-white border border-slate-200 text-slate-700 text-lg font-bold rounded-full hover:border-slate-300 hover:bg-slate-50 transition-all">
-              So funktioniert&apos;s
+              So funktioniert's
             </Link>
           </div>
         </section>
@@ -80,7 +80,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Deine Markenstimme</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen &quot;Tone of Voice&quot; und antwortet exakt in deinem Stil.
+                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen "Tone of Voice" und antwortet exakt in deinem Stil.
                 </p>
               </div>
 

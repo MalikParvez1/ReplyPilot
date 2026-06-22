@@ -1,19 +1,22 @@
-// src/middleware.ts
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Welche Routen sollen geschützt sein?
+// 1. Definiere hier alle Routen, die zwingend einen Login erfordern
 const isProtectedRoute = createRouteMatcher([
-  '/',             // Dashboard
-  '/admin(.*)',    // Admin-Bereich
-  '/api/reviews(.*)' // Unsere API Routen
+  '/dashboard(.*)' // Schützt das Dashboard und alle Unterseiten (z.B. /dashboard/markenstimme)
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
+  // 2. Wenn der Nutzer eine geschützte Route aufruft, blockiere den Zugriff ohne Login
   if (isProtectedRoute(req)) {
-    await auth.protect(); // Leitet User zum Login, wenn nicht eingeloggt
+    auth.protect();
   }
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Überspringt interne Next.js-Dateien und statische Assets (Bilder, CSS)
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Führt die Middleware immer für API-Routen aus
+    '/(api|trpc)(.*)',
+  ],
 };
