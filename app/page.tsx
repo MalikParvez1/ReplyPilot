@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Send, Star, Zap, MessageSquare, ArrowRight, ShieldCheck } from "lucide-react";
 // Importiere unsere neue Client Component
-import { HeaderAuth } from "@/components/HeaderAuth";
+import { HeaderAuth } from "@/components/HeaderAuth"
+import { HeroCTA, BottomCTA } from "@/components/LandingCTA";
 
 // Kein 'async' mehr nötig!
 export default function LandingPage() {
@@ -41,12 +42,9 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link href="/dashboard" className="px-8 py-4 bg-[#FF5A36] hover:bg-[#e04a29] text-white text-lg font-bold rounded-full shadow-lg shadow-orange-500/30 transition-all flex items-center space-x-2">
-              <span>Kostenlos starten</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+            <HeroCTA />
             <Link href="#features" className="px-8 py-4 bg-white border border-slate-200 text-slate-700 text-lg font-bold rounded-full hover:border-slate-300 hover:bg-slate-50 transition-all">
-              So funktioniert's
+              So funktioniert&apos;s
             </Link>
           </div>
         </section>
@@ -80,7 +78,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Deine Markenstimme</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen "Tone of Voice" und antwortet exakt in deinem Stil.
+                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen &quot;Tone of Voice&quot; und antwortet exakt in deinem Stil.
                 </p>
               </div>
 
@@ -110,9 +108,7 @@ export default function LandingPage() {
             <p className="text-slate-300 text-lg mb-10 max-w-2xl mx-auto relative z-10">
               Verknüpfe jetzt dein Google Business Profil und lass ReplyPilot die schwere Arbeit übernehmen.
             </p>
-            <Link href="/dashboard" className="inline-flex px-8 py-4 bg-[#FF5A36] hover:bg-[#e04a29] text-white text-lg font-bold rounded-full shadow-lg transition-all relative z-10">
-              Jetzt Cockpit einrichten
-            </Link>
+            <BottomCTA />
           </div>
         </section>
       </main>
