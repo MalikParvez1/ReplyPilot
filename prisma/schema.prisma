@@ -9,53 +9,55 @@ datasource db {
 
 // --- CLERK USER MODELL ---
 model User {
-  id            String    @id // Hier speichern wir die Clerk User ID
-  email         String    @unique
-  name          String?
-  
+  id    String  @id // Hier speichern wir die Clerk User ID
+  email String  @unique
+  name  String?
+
   // ROLLEN-SYSTEM
-  role          String    @default("USER") 
-  
+  role String @default("USER")
+
   // Verknüpfung zum SaaS Mandanten
-  businessId    String?
-  business      Business? @relation(fields: [businessId], references: [id])
+  businessId String?
+  business   Business? @relation(fields: [businessId], references: [id])
 }
 
-// --- SAAS BUSINESS LOGIK (Bleibt unverändert) ---
+// --- SAAS BUSINESS LOGIK ---
 model Business {
   id            String      @id @default(cuid())
   name          String
-  googlePlaceId String?     
+  googlePlaceId String?
   users         User[]
   reviews       Review[]
-  settings      AISettings?
+  settings      AISettings? @relation(fields: [settingsId], references: [id])
+  settingsId    String?     @unique
   createdAt     DateTime    @default(now())
 }
 
 model AISettings {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  businessName      String?  // Name des Ladens
-  businessType      String?  // z.B. Restaurant, Arzt, Kino
-  toneOfVoice       String   @default("PROFESSIONAL") // CASUAL, PROFESSIONAL, FRIENDLY
-  additionalContext String?  // z.B. "Erwähne immer unsere Webseite www..."
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  business          Business? @relation
+  businessName      String? // Name des Ladens
+  businessType      String? // z.B. Restaurant, Arzt, Kino
+  toneOfVoice       String    @default("PROFESSIONAL") // CASUAL, PROFESSIONAL, FRIENDLY
+  additionalContext String? // z.B. "Erwähne immer unsere Webseite www..."
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Review {
-  id             String   @id @default(uuid())
-  googleReviewId String   @unique
+  id             String  @id @default(uuid())
+  googleReviewId String  @unique
   authorName     String
   avatarUrl      String?
   rating         Int
   comment        String
   replyText      String?
-  status         String   @default("UNANSWERED")
-  
-  businessId     String   
-  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  status         String  @default("UNANSWERED")
+
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
