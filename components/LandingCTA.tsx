@@ -52,3 +52,35 @@ export function BottomCTA() {
     </SignUpButton>
   );
 }
+
+export function PricingCTA({ highlighted }: { highlighted?: boolean }) {
+  const { isLoaded, userId } = useAuth();
+
+  const baseClass = "w-full py-3.5 rounded-xl font-bold transition-all flex justify-center items-center text-sm";
+  const highlightedClass = highlighted
+    ? "bg-[#FF5A36] hover:bg-[#e04a29] text-white shadow-md shadow-orange-500/20"
+    : "bg-slate-100 hover:bg-slate-200 text-slate-900";
+
+  // Verhindert Flackern während Clerk lädt
+  if (!isLoaded) {
+    return <div className={`h-12 animate-pulse rounded-xl w-full ${highlighted ? 'bg-orange-200' : 'bg-slate-200'}`}></div>;
+  }
+
+  // Wenn eingeloggt -> Direkt zum Tarif-Upgrade ins Dashboard
+  if (userId) {
+    return (
+      <Link href="/dashboard/tarife" className={`${baseClass} ${highlightedClass}`}>
+        Tarif auswählen
+      </Link>
+    );
+  }
+
+  // Wenn ausgeloggt -> Öffne das Registrierungs-Modal
+  return (
+    <SignUpButton mode="modal">
+      <button className={`${baseClass} ${highlightedClass}`}>
+        Kostenlos testen
+      </button>
+    </SignUpButton>
+  );
+}

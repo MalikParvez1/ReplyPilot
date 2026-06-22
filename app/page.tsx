@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { Send, Star, Zap, MessageSquare, ArrowRight, ShieldCheck } from "lucide-react";
-// Importiere unsere neue Client Component
-import { HeaderAuth } from "@/components/HeaderAuth"
-import { HeroCTA, BottomCTA } from "@/components/LandingCTA";
+import { Send, Star, Zap, MessageSquare, ArrowRight, ShieldCheck, Check } from "lucide-react";
+import { HeaderAuth } from "@/components/HeaderAuth";
+import { HeroCTA, BottomCTA, PricingCTA } from "@/components/LandingCTA";
 
-// Kein 'async' mehr nötig!
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-sans selection:bg-[#FF5A36] selection:text-white">
@@ -19,7 +17,6 @@ export default function LandingPage() {
         </div>
         
         <nav className="flex items-center space-x-4 md:space-x-6">
-          {/* Hier rendert jetzt unsere saubere Client-Logik */}
           <HeaderAuth />
         </nav>
       </header>
@@ -44,7 +41,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <HeroCTA />
             <Link href="#features" className="px-8 py-4 bg-white border border-slate-200 text-slate-700 text-lg font-bold rounded-full hover:border-slate-300 hover:bg-slate-50 transition-all">
-              So funktioniert&apos;s
+              So funktioniert's
             </Link>
           </div>
         </section>
@@ -78,7 +75,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Deine Markenstimme</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen &quot;Tone of Voice&quot; und antwortet exakt in deinem Stil.
+                  Egal ob locker, professionell oder herzlich. Die KI lernt deinen "Tone of Voice" und antwortet exakt in deinem Stil.
                 </p>
               </div>
 
@@ -92,6 +89,101 @@ export default function LandingPage() {
                   Der Google-Algorithmus liebt aktive Profile. Durch regelmäßige Antworten steigerst du deine Sichtbarkeit enorm.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24 bg-[#FDFBF7]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Einfache, transparente Preise</h2>
+              <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+                Wähle das Paket, das am besten zu deinem Geschäft passt. Jederzeit monatlich kündbar.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
+              
+              {/* Starter Plan */}
+              <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Starter</h3>
+                <div className="flex items-baseline space-x-1 mb-6">
+                  <span className="text-4xl font-extrabold text-slate-900">19 €</span>
+                  <span className="text-slate-500 font-medium">/ Monat</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                  {[
+                    "1 Standort",
+                    "50 Bewertungen / Monat",
+                    "1 Markenstimme-Vorlage",
+                    "Push-Benachrichtigungen",
+                    "E-Mail-Support (48h)"
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <Check className="w-5 h-5 text-emerald-500 shrink-0" />
+                      <span className="text-slate-600 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <PricingCTA highlighted={false} />
+              </div>
+
+              {/* Pro Plan (Highlighted) */}
+              <div className="p-8 rounded-3xl bg-white border-2 border-[#FF5A36] shadow-xl relative transform md:-translate-y-4">
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <span className="bg-[#FF5A36] text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">
+                    Empfohlen
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Pro</h3>
+                <div className="flex items-baseline space-x-1 mb-6">
+                  <span className="text-4xl font-extrabold text-slate-900">29 €</span>
+                  <span className="text-slate-500 font-medium">/ Monat</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                  {[
+                    "3 Standorte",
+                    "200 Bewertungen / Monat",
+                    "5 Markenstimme-Vorlagen",
+                    "Auto-Antwort (nur positiv)",
+                    "Volles Analytics-Dashboard",
+                    "E-Mail-Support (24h)"
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <Check className="w-5 h-5 text-[#FF5A36] shrink-0" />
+                      <span className="text-slate-900 font-medium text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <PricingCTA highlighted={true} />
+              </div>
+
+              {/* Business Plan */}
+              <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Business</h3>
+                <div className="flex items-baseline space-x-1 mb-6">
+                  <span className="text-4xl font-extrabold text-slate-900">79 €</span>
+                  <span className="text-slate-500 font-medium">/ Monat</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                  {[
+                    "10 Standorte",
+                    "Unbegrenzte Bewertungen",
+                    "Unbegrenzte Vorlagen",
+                    "Auto-Antwort (alle)",
+                    "Analytics inkl. Export",
+                    "Telefon-Support (4h)"
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <Check className="w-5 h-5 text-emerald-500 shrink-0" />
+                      <span className="text-slate-600 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <PricingCTA highlighted={false} />
+              </div>
+
             </div>
           </div>
         </section>
