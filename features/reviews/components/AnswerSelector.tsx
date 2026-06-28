@@ -40,7 +40,7 @@ export function AnswerSelector({ suggestions, onPublish, isPublishing }: AnswerS
               <span className="inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mb-2">
                 Option {idx + 1}
               </span>
-              <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed line-clamp-5">
+              <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed line-clamp-5 whitespace-pre-wrap">
                 {suggestion}
               </p>
             </div>
