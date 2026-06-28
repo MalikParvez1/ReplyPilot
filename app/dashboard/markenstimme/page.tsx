@@ -1,134 +1,175 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Save } from "lucide-react";
+
+// Vorgenerierte Tonalitäten für die Buttons
+const TONE_PRESETS = [
+  "Professionell & Höflich (Sie)",
+  "Locker & Freundlich (Du)",
+  "Herzlich & Emotional (Du)",
+  "Sachlich & Kurz (Sie)",
+  "Hip & Modern (Du)"
+];
 
 export default function MarkenstimmePage() {
-  const [tonality, setTonality] = useState("Warm");
-  const [emojiEnabled, setEmojiEnabled] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const [form, setForm] = useState({
+    businessName: "",
+    businessType: "",
+    toneOfVoice: "Professionell & Höflich (Sie)",
+    closingWord: "",
+    forbiddenWords: "",
+    additionalContext: "",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setForm({
+            businessName: data.businessName || "",
+            businessType: data.businessType || "",
+            toneOfVoice: data.toneOfVoice || "Professionell & Höflich (Sie)",
+            closingWord: data.closingWord || "",
+            forbiddenWords: data.forbiddenWords || "",
+            additionalContext: data.additionalContext || "",
+          });
+        }
+        setIsLoading(false);
+      });
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (res.ok) setMessage("✅ Markenstimme erfolgreich gespeichert!");
+      else setMessage("❌ Fehler beim Speichern.");
+    } catch (error) {
+      setMessage("❌ Ein Fehler ist aufgetreten.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="p-8"><Loader2 className="animate-spin w-6 h-6 text-slate-400" /></div>;
 
   return (
-    <div className="max-w-4xl animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <p className="text-sm text-slate-500 font-medium mb-1">So klingt deine Marke</p>
-          <h1 className="text-3xl font-bold text-slate-900">Markenstimme</h1>
-        </div>
-        <Button className="bg-[#FF5A36] hover:bg-[#e04a29] text-white rounded-full px-6">
-          Antworten
-        </Button>
+    <div className="max-w-3xl space-y-8 animate-in fade-in duration-300">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Markenstimme & KI-Regeln</h1>
+        <p className="text-slate-500 mt-2">
+          Passe an, wie die KI für dein Unternehmen antworten soll. Wähle eine Tonalität und setze klare Grenzen.
+        </p>
       </div>
 
-      <div className="space-y-8">
-        {/* Firmenname & Unterzeichner */}
+      <div className="space-y-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        
+        {/* Basisdaten */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-slate-700 font-semibold">Firmenname</Label>
-            <Input defaultValue="Trattoria Bella" className="bg-white border-slate-200 shadow-sm rounded-xl h-11" />
-            <p className="text-[11px] text-slate-400">Erscheint in der Signatur.</p>
+            <Label htmlFor="businessName">Name des Unternehmens</Label>
+            <Input 
+              id="businessName" 
+              placeholder="z.B. Café am Park" 
+              value={form.businessName}
+              onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-700 font-semibold">Unterzeichner</Label>
-            <Input defaultValue="Maria & Team" className="bg-white border-slate-200 shadow-sm rounded-xl h-11" />
+            <Label htmlFor="businessType">Branche</Label>
+            <Input 
+              id="businessType" 
+              placeholder="z.B. Gastronomie" 
+              value={form.businessType}
+              onChange={(e) => setForm({ ...form, businessType: e.target.value })}
+            />
           </div>
         </div>
 
-        {/* Tonalität */}
+        {/* Tonalität mit Buttons */}
         <div className="space-y-3">
-          <Label className="text-slate-700 font-semibold">Tonalitaet</Label>
-          <div className="flex space-x-3">
-            {["Warm", "Professionell", "Locker"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTonality(t)}
-                className={`px-5 py-2 rounded-xl text-sm font-medium transition-all border ${
-                  tonality === t
-                    ? "border-[#FF5A36] bg-orange-50 text-[#FF5A36]"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                }`}
+          <Label>Tonalität (Wie sprichst du Kunden an?)</Label>
+          <div className="flex flex-wrap gap-2">
+            {TONE_PRESETS.map((preset) => (
+              <Button
+                key={preset}
+                type="button"
+                variant={form.toneOfVoice === preset ? "default" : "outline"}
+                onClick={() => setForm({ ...form, toneOfVoice: preset })}
+                className="text-xs"
               >
-                {t}
-              </button>
+                {preset}
+              </Button>
             ))}
           </div>
+          <Input 
+            placeholder="Oder eigene Tonalität eingeben..." 
+            value={form.toneOfVoice}
+            onChange={(e) => setForm({ ...form, toneOfVoice: e.target.value })}
+            className="mt-2 text-sm"
+          />
         </div>
 
-        {/* Sprache & Emojis */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Leitplanken (Guardrails) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-slate-700 font-semibold">Sprache</Label>
-            <select className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-950">
-              <option>Automatisch erkennen</option>
-              <option>Deutsch</option>
-              <option>Englisch</option>
-            </select>
+            <Label htmlFor="closingWord" className="text-blue-600">Fester Schlusssatz (Optional)</Label>
+            <Input 
+              id="closingWord" 
+              placeholder="z.B. Liebe Grüße, dein Café am Park Team" 
+              value={form.closingWord}
+              onChange={(e) => setForm({ ...form, closingWord: e.target.value })}
+            />
+            <p className="text-[11px] text-slate-400">Die KI beendet jede Antwort genau hiermit.</p>
           </div>
-          <div className="space-y-2 pt-1">
-            <Label className="text-slate-700 font-semibold mb-3 block">Emoji erlauben</Label>
-            <div className="flex items-center space-x-3">
-              <Switch 
-                checked={emojiEnabled} 
-                onCheckedChange={setEmojiEnabled}
-                className="data-[state=checked]:bg-teal-500"
-              />
-              <span className="text-sm text-slate-500">Sparsam, nur bei positiven Antworten</span>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="forbiddenWords" className="text-red-500">Verbotene Wörter (Optional)</Label>
+            <Input 
+              id="forbiddenWords" 
+              placeholder="z.B. Entschuldigung, leider, hoffen" 
+              value={form.forbiddenWords}
+              onChange={(e) => setForm({ ...form, forbiddenWords: e.target.value })}
+            />
+            <p className="text-[11px] text-slate-400">Trenne Wörter mit Kommas.</p>
           </div>
         </div>
 
-        {/* Marken-Floskel */}
+        {/* Zusatzregeln */}
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">Marken-Floskel (optional)</Label>
-          <Input defaultValue="Buon appetito und bis bald!" className="bg-white border-slate-200 shadow-sm rounded-xl h-11" />
-          <p className="text-[11px] text-slate-400">Wird ans Ende jeder Antwort angehängt.</p>
+          <Label htmlFor="additionalContext">Sonstige KI-Anweisungen</Label>
+          <Textarea 
+            id="additionalContext" 
+            placeholder="z.B. Nutze maximal ein Emoji pro Antwort. Bedanke dich immer für Kritik." 
+            className="h-24"
+            value={form.additionalContext}
+            onChange={(e) => setForm({ ...form, additionalContext: e.target.value })}
+          />
         </div>
 
-        {/* Verbotene Wörter (Einfacher Mockup für Tags) */}
-        <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">Verbotene Woerter</Label>
-          <div className="min-h-[44px] flex items-center flex-wrap gap-2 p-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-            <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md flex items-center">
-              billig <button className="ml-2 text-slate-400 hover:text-red-500">&times;</button>
-            </span>
-            <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md flex items-center">
-              Beschwerde <button className="ml-2 text-slate-400 hover:text-red-500">&times;</button>
-            </span>
-            <input type="text" placeholder="Wort + Enter" className="text-sm outline-none bg-transparent flex-1 ml-2 text-slate-400" />
-          </div>
-          <p className="text-[11px] text-slate-400">Diese Woerter erscheinen nie in einer Antwort (z.B. aus Compliance-Gruenden).</p>
-        </div>
-
-        {/* Live-Vorschau */}
-        <div className="space-y-2 pt-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-bold text-slate-900">Live-Vorschau</h3>
-            <span className="text-xs text-slate-400">Beispiel: 2-Sterne-Bewertung</span>
-          </div>
-          <div className="bg-[#0F172A] text-slate-300 p-6 rounded-2xl shadow-lg">
-            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-4 block">
-              SO ANTWORTET REPLYPILOT
-            </span>
-            <p className="text-sm leading-relaxed">
-              Guten Tag Sandra, vielen Dank fuer Ihre offene Rueckmeldung, und es tut uns leid, dass wir Sie enttaeuscht haben. 
-              Gerade beim Thema Essen sollte es bei uns anders laufen, das schauen wir uns umgehend an. Wir moechten das unbedingt 
-              geradebiegen, denn so kennen Sie uns sonst nicht. Melden Sie sich gerne direkt bei uns, dann finden wir gemeinsam eine Loesung. 
-              <br/><br/>
-              Buon appetito und bis bald! Herzliche Gruesse, <br/>
-              Maria & Team, Trattoria Bella
-            </p>
-          </div>
-        </div>
-
-        {/* Speichern Button */}
-        <div className="pt-6 pb-20">
-          <Button className="bg-[#FF5A36] hover:bg-[#e04a29] text-white rounded-full px-8 h-12 text-sm font-bold shadow-lg shadow-orange-500/20">
-            Markenstimme speichern
+        <div className="pt-4 flex items-center gap-4 border-t border-slate-100">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Einstellungen speichern
           </Button>
+          {message && <span className="text-sm font-medium text-slate-600">{message}</span>}
         </div>
+
       </div>
     </div>
   );

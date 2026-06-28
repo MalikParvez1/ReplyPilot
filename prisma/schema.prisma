@@ -34,16 +34,23 @@ model User {
 // SETTINGS MODEL (Für die "Markenstimme" und KI-Einstellungen)
 // -----------------------------------------------------------------------------
 model Settings {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  toneOfVoice    String   @default("professionell und freundlich") // Deine Markenstimme
-  autoReply      Boolean  @default(false)
-  language       String   @default("de")
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  // Diese Felder brauchen wir für die Markenstimme:
+  businessName      String?
+  businessType      String?
+  toneOfVoice       String?
+  additionalContext String?
+  closingWord       String?
+  forbiddenWords    String?
+  
+  // Deine alten Felder bleiben erhalten:
+  autoReply         Boolean  @default(false)
+  language          String   @default("de")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // -----------------------------------------------------------------------------

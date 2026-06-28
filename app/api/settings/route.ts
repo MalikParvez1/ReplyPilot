@@ -4,68 +4,54 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { userId: clerkId } = await auth();
+    if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const dbUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!dbUser || !dbUser.businessId) {
-      return NextResponse.json({ error: 'Kein Betrieb zugeordnet' }, { status: 403 });
-    }
-
-    const settings = await prisma.aISettings.findUnique({
-      where: { businessId: dbUser.businessId },
+    const dbUser = await prisma.user.findUnique({ 
+      where: { clerkId }, include: { settings: true } 
     });
-
-    if (!settings) {
-      return NextResponse.json({ error: 'Einstellungen nicht gefunden' }, { status: 404 });
-    }
-
-    return NextResponse.json(settings);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    return NextResponse.json(dbUser?.settings || {});
+  } catch (error) {
+    return NextResponse.json({ error: "Interner Fehler" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { userId: clerkId } = await auth();
+    if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const dbUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!dbUser || !dbUser.businessId) {
-      return NextResponse.json({ error: 'Kein Betrieb zugeordnet' }, { status: 403 });
-    }
+    const dbUser = await prisma.user.findUnique({ where: { clerkId } });
+    if (!dbUser) return NextResponse.json({ error: "User nicht gefunden" }, { status: 404 });
 
-    const body = await req.json();
-    const { tone, length, includeBusinessName, customContext, language, standardReplyText } = body;
+    const data = await req.json();
 
-    const settings = await prisma.aISettings.upsert({
-      where: { businessId: dbUser.businessId },
+    // HIER IST DIE KORREKTUR: prisma.settings (mit "s")
+    const settings = await prisma.settings.upsert({ 
+      where: { userId: dbUser.id },
       update: {
-        tone,
-        length,
-        includeBusinessName,
-        customContext,
-        language,
-        standardReplyText,
+        businessName: data.businessName,
+        businessType: data.businessType,
+        toneOfVoice: data.toneOfVoice,
+        additionalContext: data.additionalContext,
+        closingWord: data.closingWord,
+        forbiddenWords: data.forbiddenWords,
       },
       create: {
-        businessId: dbUser.businessId,
-        tone,
-        length,
-        includeBusinessName,
-        customContext,
-        language,
-        standardReplyText,
-      },
+        userId: dbUser.id,
+        businessName: data.businessName,
+        businessType: data.businessType,
+        toneOfVoice: data.toneOfVoice,
+        additionalContext: data.additionalContext,
+        closingWord: data.closingWord,
+        forbiddenWords: data.forbiddenWords,
+      }
     });
 
     return NextResponse.json(settings);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Speichern fehlgeschlagen" }, { status: 500 });
   }
 }
