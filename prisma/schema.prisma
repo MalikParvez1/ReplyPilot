@@ -1,63 +1,70 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql" // Hier stellen wir von sqlite auf postgresql um
 }
 
-// --- CLERK USER MODELL ---
+// -----------------------------------------------------------------------------
+// USER MODEL (Wird über den Clerk Webhook synchronisiert)
+// -----------------------------------------------------------------------------
 model User {
-  id    String  @id // Hier speichern wir die Clerk User ID
-  email String  @unique
-  name  String?
+  id               String    @id @default(cuid())
+  clerkId          String    @unique // Die ID, die von Clerk kommt
+  email            String    @unique
+  firstName        String?
+  lastName         String?
+  
+  // Stripe & Abo-Daten
+  stripeCustomerId String?   @unique
+  stripePriceId    String?
+  subscriptionEnd  DateTime?
+  plan             String    @default("free") // "free", "starter", "pro", "business"
 
-  // ROLLEN-SYSTEM
-  role String @default("USER")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  // Verknüpfung zum SaaS Mandanten
-  businessId String?
-  business   Business? @relation(fields: [businessId], references: [id])
+  // Relationen
+  reviews          Review[]
+  settings         Settings?
 }
 
-// --- SAAS BUSINESS LOGIK ---
-model Business {
-  id            String      @id @default(cuid())
-  name          String
-  googlePlaceId String?
-  users         User[]
-  reviews       Review[]
-  settings      AISettings? @relation(fields: [settingsId], references: [id])
-  settingsId    String?     @unique
-  createdAt     DateTime    @default(now())
+// -----------------------------------------------------------------------------
+// SETTINGS MODEL (Für die "Markenstimme" und KI-Einstellungen)
+// -----------------------------------------------------------------------------
+model Settings {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  toneOfVoice    String   @default("professionell und freundlich") // Deine Markenstimme
+  autoReply      Boolean  @default(false)
+  language       String   @default("de")
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
-model AISettings {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  business          Business? @relation
-  businessName      String? // Name des Ladens
-  businessType      String? // z.B. Restaurant, Arzt, Kino
-  toneOfVoice       String    @default("PROFESSIONAL") // CASUAL, PROFESSIONAL, FRIENDLY
-  additionalContext String? // z.B. "Erwähne immer unsere Webseite www..."
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-}
-
+// -----------------------------------------------------------------------------
+// REVIEW MODEL (Die Google-Bewertungen)
+// -----------------------------------------------------------------------------
 model Review {
-  id             String  @id @default(uuid())
-  googleReviewId String  @unique
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   authorName     String
-  avatarUrl      String?
-  rating         Int
-  comment        String
-  replyText      String?
-  status         String  @default("UNANSWERED")
+  rating         Int      // 1 bis 5 Sterne
+  text           String?  @db.Text
+  
+  // Die von der KI generierte Antwort
+  aiResponse     String?  @db.Text
+  isPublished    Boolean  @default(false)
+  
+  // Optional: Die echte Google-Review-ID, falls du sie später synchronisierst
+  googleReviewId String?  @unique
 
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
