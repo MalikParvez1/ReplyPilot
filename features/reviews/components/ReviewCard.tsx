@@ -3,15 +3,10 @@
 import { useState } from "react";
 import { AnswerSelector } from "./AnswerSelector";
 import { Button } from "@/components/ui/button";
+import { Review } from "@/core/interfaces/review.interface"; // 1. Das offizielle Interface importieren!
 
 interface ReviewCardProps {
-  review: {
-    id: string;
-    reviewText: string;
-    rating: number;
-    reviewerName: string;
-    replyText?: string | null;
-  };
+  review: Review; // 2. Den echten Typ nutzen
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
@@ -26,7 +21,8 @@ export function ReviewCard({ review }: ReviewCardProps) {
       const res = await fetch("/api/reviews/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewText: review.reviewText, rating: review.rating }),
+        // Achte hier darauf, "review.comment" an die API zu senden
+        body: JSON.stringify({ reviewText: review.comment, rating: review.rating }), 
       });
       const data = await res.json();
       setSuggestions(data.suggestions || []);
@@ -47,7 +43,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       });
       if (res.ok) {
         setCurrentReply(finalAnswer);
-        setSuggestions([]); // Vorschläge nach Erfolg leeren
+        setSuggestions([]); 
       }
     } catch (err) {
       console.error(err);
@@ -60,7 +56,8 @@ export function ReviewCard({ review }: ReviewCardProps) {
     <div className="p-5 border rounded-xl shadow-sm bg-white dark:bg-slate-900 space-y-4">
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-semibold text-sm text-slate-800 dark:text-white">{review.reviewerName}</h3>
+          {/* 3. review.authorName statt reviewerName nutzen */}
+          <h3 className="font-semibold text-sm text-slate-800 dark:text-white">{review.authorName}</h3>
           <div className="text-amber-400 text-xs mt-0.5">
             {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
           </div>
@@ -73,7 +70,8 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </div>
       
       <p className="text-slate-600 dark:text-slate-300 text-sm italic">
-        &quot;{review.reviewText}&quot;
+        {/* 4. review.comment statt reviewText nutzen */}
+        &quot;{review.comment}&quot;
       </p>
 
       {currentReply ? (

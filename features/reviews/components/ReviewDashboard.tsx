@@ -2,21 +2,27 @@
 
 import { useState } from "react";
 import { ReviewCard } from "./ReviewCard";
+import { useReviews } from "../hooks/useReviews";
+import { Loader2 } from "lucide-react";
 
 type FilterType = "ALL" | "UNANSWERED" | "ANSWERED";
 
-type Review = {
-  id: string;
-  reviewText: string;
-  rating: number;
-  reviewerName: string;
-  replyText?: string | null;
-};
-
-export function ReviewDashboard({ initialReviews = [] }: { initialReviews: Review[] }) {
+export function ReviewDashboard() {
+  // 1. Echte Daten über deinen Hook aus der DB laden!
+  const { reviews, isLoading } = useReviews();
   const [filter, setFilter] = useState<FilterType>("ALL");
 
-  const filteredReviews = initialReviews.filter((review) => {
+  // 2. Lade-Animation anzeigen, solange die DB antwortet
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  // 3. Filter-Logik auf die geladenen Daten anwenden
+  const filteredReviews = reviews.filter((review) => {
     if (filter === "UNANSWERED") return !review.replyText;
     if (filter === "ANSWERED") return !!review.replyText;
     return true; // "ALL"
@@ -37,8 +43,8 @@ export function ReviewDashboard({ initialReviews = [] }: { initialReviews: Revie
             }`}
           >
             {type === "ALL" && "Alle Rezensionen"}
-            {type === "UNANSWERED" && `Unbeantwortet (${initialReviews.filter(r => !r.replyText).length})`}
-            {type === "ANSWERED" && "Beantwortet"}
+            {type === "UNANSWERED" && `Unbeantwortet (${reviews.filter(r => !r.replyText).length})`}
+            {type === "ANSWERED" && `Beantwortet (${reviews.filter(r => r.replyText).length})`}
           </button>
         ))}
       </div>
@@ -49,7 +55,9 @@ export function ReviewDashboard({ initialReviews = [] }: { initialReviews: Revie
           <ReviewCard key={review.id} review={review} />
         ))}
         {filteredReviews.length === 0 && (
-          <p className="text-center text-sm text-slate-400 py-8">Keine Rezensionen in dieser Kategorie vorhanden.</p>
+          <p className="text-center text-sm text-slate-400 py-8">
+            Keine Rezensionen in dieser Kategorie vorhanden.
+          </p>
         )}
       </div>
     </div>

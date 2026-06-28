@@ -1,4 +1,4 @@
-import { ReviewDashboard } from "@/features/reviews/componenets/ReviewDashboard";
+import { ReviewDashboard } from "@/features/reviews/components/ReviewDashboard";
 
 export default function DashboardCockpitPage() {
   return (
@@ -9,8 +9,12 @@ export default function DashboardCockpitPage() {
         <h1 className="text-3xl font-bold text-slate-900">Cockpit</h1>
       </div>
       
-      {/* Hier laden wir deine sichere Review-Komponente (mit dem leeren Array als Fallback) */}
-      <ReviewDashboard initialReviews={[]} />
+      {/* 
+        HIER DIE ÄNDERUNG: 
+        Einfach nur noch <ReviewDashboard /> aufrufen! 
+        Die Komponente lädt jetzt alles automatisch aus deiner PostgreSQL Datenbank.
+      */}
+      <ReviewDashboard />
     </div>
   );
 }

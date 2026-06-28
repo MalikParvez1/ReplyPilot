@@ -1,35 +1,44 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
-import { PrismaReviewRepository } from '@/core/repositories/prisma-review.repository';
-import { OpenAIService } from '@/core/services/openai.service';
-import { ReviewService } from '@/core/services/review.service';
 
 export async function GET() {
   try {
-    // 1. Clerk Authentifizierung
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Datenbank-Check: Zu welchem Betrieb gehört dieser User?
-    const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+    const dbUser = await prisma.user.findUnique({ 
+      where: { clerkId: clerkId } 
+    });
     
-    if (!dbUser || !dbUser.businessId) {
-      return NextResponse.json({ error: "Kein Betrieb zugeordnet" }, { status: 403 });
+    if (!dbUser) {
+      return NextResponse.json({ error: "Benutzer nicht in Datenbank gefunden" }, { status: 404 });
     }
 
-    // 3. Business Logik aufrufen (SOLID)
-    const reviewRepository = new PrismaReviewRepository();
-    const aiService = new OpenAIService();
-    const reviewService = new ReviewService(reviewRepository, aiService);
+    const reviews = await prisma.review.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    // 4. Nur Reviews dieses Betriebs laden
-    const reviews = await reviewService.getPendingReviews(dbUser.businessId);
+    // HIER WURDE ANGEPASST: Wir nutzen jetzt die exakten Namen aus dem Review-Interface
+    const mappedReviews = reviews.map(review => ({
+      id: review.id,
+      googleReviewId: review.googleReviewId || "",
+      authorName: review.authorName,     // UI: authorName
+      rating: review.rating,             // UI: rating
+      comment: review.text || "",        // UI: comment
+      replyText: review.aiResponse,      // UI: replyText
+      status: review.aiResponse ? 'ANSWERED' : 'UNANSWERED',
+      businessId: review.userId,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    }));
     
-    return NextResponse.json(reviews);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(mappedReviews);
+  } catch (error) {
+    console.error("API Reviews GET Error:", error);
+    return NextResponse.json({ error: "Interner Server Fehler" }, { status: 500 });
   }
 }
