@@ -2,12 +2,55 @@
 
 import React from 'react';
 import { Review } from '@/core/interfaces/review.interface';
+import { useRouter } from 'next/navigation'; // <-- Wichtig für den Button
 
 interface KPIDashboardProps {
   reviews: Review[];
+  hasAnalyticsAccess: boolean; // <-- NEUER PROP FÜR DIE PAYWALL
 }
 
-export const KPIDashboard: React.FC<KPIDashboardProps> = ({ reviews }) => {
+export const KPIDashboard: React.FC<KPIDashboardProps> = ({ reviews, hasAnalyticsAccess }) => {
+  const router = useRouter();
+
+  // ==========================================
+  // PAYWALL LOGIC (Wenn der Nutzer im Free/Starter Plan ist)
+  // ==========================================
+  if (!hasAnalyticsAccess) {
+    return (
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-gray-200 shadow-sm min-h-[350px] flex items-center justify-center">
+        
+        {/* Verschwommener Dummy-Hintergrund, um Neugier zu wecken */}
+        <div className="absolute inset-0 filter blur-[8px] opacity-40 pointer-events-none p-6">
+          <div className="h-6 bg-blue-300 rounded w-1/4 mb-2"></div>
+          <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="h-32 bg-blue-600 rounded-3xl"></div>
+            <div className="h-32 bg-gray-300 rounded-3xl"></div>
+            <div className="h-32 bg-gray-300 rounded-3xl"></div>
+          </div>
+        </div>
+
+        {/* Das echte Upgrade-Banner im Vordergrund */}
+        <div className="relative z-10 text-center max-w-md bg-white/95 p-8 rounded-2xl shadow-xl border border-slate-100">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Exklusiv für Pro & Business</h2>
+          <p className="text-slate-500 mb-6 text-sm">
+            Erhalte tiefe Einblicke in deine Bewertungen, Durchschnitts-Ratings und Kundenstimmungen. 
+            Schalte das Dashboard jetzt frei.
+          </p>
+          <button 
+            onClick={() => router.push('/dashboard/tarife')} 
+            className="w-full bg-[#FF5A36] hover:bg-[#e04a29] text-white font-bold py-3.5 rounded-xl transition-all shadow-md"
+          >
+            Jetzt upgraden
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // ORIGINALER CODE (Wenn der Nutzer Pro/Business hat)
+  // ==========================================
   const totalReviews = reviews.length;
   const unansweredReviews = reviews.filter((review) => review.status === 'UNANSWERED').length;
   const averageRating = totalReviews > 0
