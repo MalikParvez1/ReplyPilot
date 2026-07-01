@@ -1,44 +1,58 @@
+// Dies ist dein Prisma Schema File
+// Lerne mehr darüber hier: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Hier stellen wir von sqlite auf postgresql um
+  provider = "postgresql" // Passe dies an, falls du SQLite oder MySQL nutzt
 }
 
-// -----------------------------------------------------------------------------
-// USER MODEL (Wird über den Clerk Webhook synchronisiert)
-// -----------------------------------------------------------------------------
 model User {
-  id               String    @id @default(cuid())
-  clerkId          String    @unique // Die ID, die von Clerk kommt
-  email            String    @unique
+  id               String     @id @default(cuid())
+  clerkId          String     @unique
+  email            String     @unique
   firstName        String?
   lastName         String?
   
-  // Stripe & Abo-Daten
-  stripeCustomerId String?   @unique
+  // Stripe & Tarif Info
+  stripeCustomerId String?
   stripePriceId    String?
   subscriptionEnd  DateTime?
-  plan             String    @default("free") // "free", "starter", "pro", "business"
+  plan             String     @default("starter") // "free", "starter", "pro", "business"
+  
+  // Neue 1-zu-n Beziehung: Ein Nutzer kann mehrere Standorte haben
+  locations        Location[] 
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  // Relationen
-  reviews          Review[]
-  settings         Settings?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 }
 
-// -----------------------------------------------------------------------------
-// SETTINGS MODEL (Für die "Markenstimme" und KI-Einstellungen)
-// -----------------------------------------------------------------------------
+// NEU: Das Location-Modell
+model Location {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name             String    // z.B. "Café Te - Mitte"
+  googleBusinessId String?   // Die ID von Google für diesen Standort (falls später angebunden)
+  
+  // Jeder Standort bekommt SEINE EIGENEN Settings und Reviews
+  settings         Settings?
+  reviews          Review[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// Settings ist jetzt mit der Location verknüpft (nicht mehr direkt mit dem User)
 model Settings {
   id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Diese Felder brauchen wir für die Markenstimme:
+  locationId        String   @unique
+  location          Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  
   businessName      String?
   businessType      String?
   toneOfVoice       String?
@@ -46,32 +60,30 @@ model Settings {
   closingWord       String?
   forbiddenWords    String?
   
-  // Deine alten Felder bleiben erhalten:
   autoReply         Boolean  @default(false)
   language          String   @default("de")
+  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
 
-// -----------------------------------------------------------------------------
-// REVIEW MODEL (Die Google-Bewertungen)
-// -----------------------------------------------------------------------------
+// Review ist jetzt mit der Location verknüpft
 model Review {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
   
-  authorName     String
-  rating         Int      // 1 bis 5 Sterne
-  text           String?  @db.Text
+  locationId        String   
+  location          Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
   
-  // Die von der KI generierte Antwort
-  aiResponse     String?  @db.Text
-  isPublished    Boolean  @default(false)
+  // Google Review Spezifika
+  googleReviewId    String?  @unique
+  authorName        String
+  rating            Int
+  comment           String
   
-  // Optional: Die echte Google-Review-ID, falls du sie später synchronisierst
-  googleReviewId String?  @unique
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  // App Logik
+  status            String   @default("UNANSWERED") // "UNANSWERED", "ANSWERED"
+  replyText         String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

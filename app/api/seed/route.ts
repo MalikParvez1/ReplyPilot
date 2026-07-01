@@ -1,48 +1,80 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET() {
-  const myUserId = "cmqy07y4s0000i01y582xtdji"; // Deine echte User-ID[cite: 5]
-
   try {
-    // Erstellt 4 Beispieldaten auf einmal
+    const { userId: clerkId } = await auth();
+    if (!clerkId) return new NextResponse("Nicht eingeloggt", { status: 401 });
+
+    // 1. Hole den User und seinen Hauptstandort
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: { locations: true }
+    });
+
+    if (!user || user.locations.length === 0) {
+      return new NextResponse("Nutzer oder Standort nicht gefunden. Bitte besuche zuerst das Dashboard.", { status: 404 });
+    }
+
+    const locationId = user.locations[0].id; // Wir nehmen den ersten Standort
+
+    // 2. Räume alte Testdaten für diesen Standort auf (falls vorhanden)
+    await prisma.review.deleteMany({ where: { locationId } });
+    await prisma.settings.deleteMany({ where: { locationId } });
+
+    // 3. Lege die Markenstimme (Settings) für diesen Standort an
+    await prisma.settings.create({
+      data: {
+        locationId: locationId,
+        businessName: "Café Mustermann",
+        businessType: "Café & Bäckerei",
+        toneOfVoice: "Herzlich, fröhlich und per Du",
+        additionalContext: "Wir sind berühmt für unseren Zimtkuchen.",
+        closingWord: "Liebe Grüße vom Café Mustermann Team",
+      }
+    });
+
+    // 4. Lege 4 brandneue Test-Bewertungen an
     await prisma.review.createMany({
       data: [
-        {
-          userId: myUserId,
-          authorName: "Max Mustermann",
-          rating: 5,
-          text: "Absolut fantastisch! Die Beratung war top und das Ergebnis spricht für sich.",
-          isPublished: false,
+        { 
+          locationId: locationId, 
+          authorName: "Anna M.", 
+          rating: 5, 
+          comment: "Bester Kaffee der Stadt! Komme jeden Morgen hierher.", 
+          status: "UNANSWERED" 
         },
-        {
-          userId: myUserId,
-          authorName: "Sabine Schmidt",
-          rating: 4,
-          text: "Sehr gut, aber die Wartezeit war mit 15 Minuten etwas zu lang.",
-          isPublished: false,
+        { 
+          locationId: locationId, 
+          authorName: "Peter S.", 
+          rating: 4, 
+          comment: "Sehr gemütlich, Kuchen war lecker. Ein Stern Abzug weil es etwas laut war.", 
+          status: "UNANSWERED" 
         },
-        {
-          userId: myUserId,
-          authorName: "Kritischer Kunde",
-          rating: 2,
-          text: "Leider nicht wie erwartet. Das Produkt war fehlerhaft.",
-          aiResponse: "Lieber Kunde, es tut uns leid, dass Sie unzufrieden sind. Bitte kontaktieren Sie unseren Support.",
-          isPublished: true, // Das wird im Tab "Beantwortet" landen!
+        { 
+          locationId: locationId, 
+          authorName: "Lisa K.", 
+          rating: 1, 
+          comment: "Bedienung hat mich 15 Minuten ignoriert. Gehe ich nie wieder hin!", 
+          status: "UNANSWERED" 
         },
-        {
-          userId: myUserId,
-          authorName: "Julia W.",
-          rating: 5,
-          text: "Immer wieder gerne, mein absoluter Lieblingsladen!",
-          isPublished: false,
+        { 
+          locationId: locationId, 
+          authorName: "Tom H.", 
+          rating: 5, 
+          comment: "Einfach top. Der Zimtkuchen ist ein Traum.", 
+          status: "UNANSWERED" 
         }
       ]
     });
 
-    return NextResponse.json({ message: "Erfolgreich 4 Test-Rezensionen angelegt!" });
+    return NextResponse.json({ 
+      message: "Erfolg! Testdaten (Markenstimme + 4 Bewertungen) wurden für deinen Standort angelegt." 
+    });
+
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Fehler beim Anlegen" }, { status: 500 });
+    console.error("Seed Error:", error);
+    return new NextResponse("Interner Fehler beim Seeden", { status: 500 });
   }
 }
